@@ -1,0 +1,6 @@
+{
+  "git.repositoryScanIgnoredFolders": ["node_modules", "external"],
+  "git.ignoredRepositories": [
+    "/Users/muhammadalisiddique/Developer/Responsible AI project/external/ghaleb-replication"
+  ]
+}

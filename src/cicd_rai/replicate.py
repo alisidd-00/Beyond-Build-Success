@@ -227,9 +227,22 @@ def rq3(con) -> None:
                      "chi2": c, "p": p})
     pd.DataFrame(rows).to_csv(OUT / "rq3_agent_success_rates.csv", index=False)
 
+    # Correction (ours): the CSV's first column is author_type; 24,860 completed runs come from
+    # 5,233 *human* PRs that are not in AIDev-pop's agent tables. rq_3.py cannot see their files,
+    # so they all land in "Did Not Modify CI YAML" and inflate that group's success rate.
+    agent_only = done[done.agent.notna()]
+    ar = agent_only.groupby("modified_gha").ok.mean() * 100
+    c, p, _ = chi2(pd.crosstab(agent_only.modified_gha, agent_only.ok))
+    report("[correction] runs from human PRs in CSV", int(done.agent.isna().sum()))
+    report("[correction] completed runs, agent PRs only", len(agent_only))
+    report("[correction] success % modified (agent only)", round(ar[True], 2))
+    report("[correction] success % not modified (agent only)", round(ar[False], 2))
+    report(f"[correction] chi2 agent only (naive, p={p:.2g})", c)
+
     # Robustness (ours, not in the paper): runs are clustered within PRs, so a PR with 300 runs
-    # weighs 300x. Re-estimate at PR level using each PR's share of successful runs.
-    pr_level = done.groupby(["pr_id", "modified_gha"]).ok.mean().reset_index()
+    # weighs 300x. Re-estimate at PR level using each PR's share of successful runs (agent PRs only;
+    # clustered models are in cicd_rai.rq3_robust).
+    pr_level = agent_only.groupby(["pr_id", "modified_gha"]).ok.mean().reset_index()
     pr_rate = pr_level.groupby("modified_gha").ok.mean() * 100
     report("[robustness] PR-level mean success % (modified)", round(pr_rate[True], 2))
     report("[robustness] PR-level mean success % (not modified)", round(pr_rate[False], 2))

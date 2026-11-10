@@ -21,10 +21,28 @@ Our run: `uv run python -m cicd_rai.replicate` → `results/replication/comparis
 
 * **M1 – Inconsistent CI definitions across RQs.** RQ1 uses 24 services, RQ2 uses 11 (15 patterns), RQ3 uses GitHub Actions only, while all three are described as "CI/CD changes".
 * **M2 – Merge rate denominator** includes still-open PRs (merged = `merged_at` not null), not stated in the paper.
-* **M3 – Unit of analysis in RQ3 is the workflow run**, so PRs with many runs dominate. At the PR level the direction **reverses**:
-  * first-run success (from the package's own `rq3_first_run_rates.csv`, not reported in the paper): 73.81 % (modified GHA, n = 1,856 PRs) vs 76.70 % (did not, n = 29,192);
-  * mean per-PR success share (ours): 71.92 % vs 75.74 %.
-  → The paper's "comparable / slightly higher success" claim depends on run-level pooling. To test properly: cluster-robust (GEE / mixed-effects logistic) model with PR and repo random effects.
+* **D9 – RQ3 comparison group contains human PRs (most consequential issue).** The runs CSV has an
+  `author_type` column: 24,860 completed runs (5,233 PRs) are `human`, i.e. not AIDev-pop agent PRs.
+  `rq_3.py` only checks agent commit files, so every human run is labelled "Did Not Modify CI YAML".
+  Human runs succeed 86.7 % vs 71.0 % for agent runs, inflating the comparison group.
+
+  | RQ3 overall | modified GHA | not modified | diff |
+  |---|---|---|---|
+  | published (agent + human runs) | 75.59 % | 74.87 % | +0.72 pp, χ² = 2.20, p = .138 |
+  | agent PRs only, naive χ² | 75.59 % | 70.43 % | +5.16 pp, χ² = 100.8, p < 10⁻²³ |
+  | agent only, GEE clustered by PR | | | OR = 1.07, p = .118 |
+  | agent only, GEE by repo + agent FE | | | OR = 1.12, p = .040 |
+  | agent only, PR level, first run | 73.65 % | 74.92 % | −1.27 pp, p = .237 |
+  | agent only, success/(success+failure), GEE | 83.78 % | 76.65 % | OR = 1.07, p = .184 |
+
+  The published "comparable" conclusion is reached for the wrong reason (population mixing); with the
+  correct population the run-level gap is +5.2 pp but it is not robust to clustering. Per-agent
+  first-run effects are large and opposite: OpenAI Codex −13.5 pp (58.4 vs 71.9 %, p < 10⁻¹³), Copilot
+  +5.4 pp (p = .009). Per-agent rates in Table 3 are unaffected (human rows have no agent).
+  Script: `uv run python -m cicd_rai.rq3_robust` → `results/replication/rq3_robustness.csv`.
+* **M3 – Unit of analysis in RQ3 is the workflow run**, so PRs with many runs dominate (see D9 for the
+  clustered and PR-level re-analysis). The package's own `rq3_first_run_rates.csv` (73.81 % vs 76.70 %) is
+  not reported in the paper and also mixes in human PRs.
 * **M4 – Yates' correction** is applied silently on 2×2 tables (scipy default); no multiple-comparison correction across 5 agents.
 * **M5 – Snapshot truncation:** AIDev v3/v4 sub-resource tables are truncated at 30 items per PR (fixed in v5), which can hide later commits/reviews in long PRs.
 * **M7 – CI evidence has expired on GitHub (verified 2026-11-10).** Run ids from the CSV dated Dec 2024 and

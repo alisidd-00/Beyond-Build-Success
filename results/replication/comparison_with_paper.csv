@@ -74,6 +74,11 @@ Devin: chi2 (p=0.0152),5.89,5.89,True
 OpenAI_Codex: no-CI success %,64.12,64.12,True
 OpenAI_Codex: with-CI success %,64.0,64.0,True
 OpenAI_Codex: chi2 (p=0.9296),0.01,0.01,True
+[correction] runs from human PRs in CSV,24860,,
+"[correction] completed runs, agent PRs only",75070,,
+[correction] success % modified (agent only),75.59,,
+[correction] success % not modified (agent only),70.43,,
+"[correction] chi2 agent only (naive, p=1e-23)",100.77,,
 [robustness] PR-level mean success % (modified),71.92,,
-[robustness] PR-level mean success % (not modified),75.74,,
-[robustness] PRs with runs (modified / not),1856/29192,,
+[robustness] PR-level mean success % (not modified),73.52,,
+[robustness] PRs with runs (modified / not),1856/23959,,
