@@ -1,0 +1,6 @@
+agent,AppVeyor,Azure Pipelines,Bitrise,Buildkite,CircleCI,Cirrus CI,GitHub Actions,GitLab CI,Jenkins,Travis CI
+Claude_Code,0,0,0,0,2,0,265,0,0,2
+Copilot,4,104,0,31,6,0,2316,0,0,6
+Cursor,0,0,1,0,2,0,552,1,0,2
+Devin,0,0,0,0,6,0,2329,0,0,3
+OpenAI_Codex,0,1,0,2,62,1,2103,5,2,9

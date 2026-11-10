@@ -1,0 +1,6 @@
+agent,total_files,yaml_files,ci_files,yaml_pct
+Claude_Code,23296,972.0,269,4.17
+Copilot,187247,6426.0,2467,3.43
+Cursor,37838,1661.0,558,4.39
+Devin,169467,8186.0,2338,4.83
+OpenAI_Codex,294075,5916.0,2185,2.01

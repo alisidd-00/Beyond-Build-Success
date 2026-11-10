@@ -1,0 +1,79 @@
+metric,ours,paper,match
+total file-change rows,711923,711923.0,True
+YAML rows,23161,23161.0,True
+YAML % of rows,3.25,3.25,True
+CI/CD rows (24-service regex),7817,7817.0,True
+CI/CD % of YAML rows,33.75,33.75,True
+CI/CD % of ALL rows (abstract says 3.25%),1.1,,
+Claude_Code: total rows,23296,23296.0,True
+Claude_Code: YAML rows,972.0,972.0,True
+Claude_Code: YAML %,4.17,4.17,True
+Copilot: total rows,187247,187247.0,True
+Copilot: YAML rows,6426.0,6426.0,True
+Copilot: YAML %,3.43,3.43,True
+Cursor: total rows,37838,37838.0,True
+Cursor: YAML rows,1661.0,1661.0,True
+Cursor: YAML %,4.39,4.39,True
+Devin: total rows,169467,169467.0,True
+Devin: YAML rows,8186.0,8186.0,True
+Devin: YAML %,4.83,4.83,True
+OpenAI_Codex: total rows,294075,294075.0,True
+OpenAI_Codex: YAML rows,5916.0,5916.0,True
+OpenAI_Codex: YAML %,2.01,2.01,True
+chi2 agent x YAML (df=4),3016.26,3016.26,True
+GitHub Actions share of CI/CD rows %,96.78,96.77,True
+chi2 agent x platform (df=36),435.38,435.38,True
+projects with YAML changes,936,1605.0,False
+PRs with YAML changes,3995,8031.0,False
+mean YAML file-changes / project,24.74,17.63,False
+median YAML file-changes / project,4.0,3.0,False
+max YAML file-changes / project,3589,3589.0,True
+% projects with exactly 1 YAML PR,51.3,47.0,False
+PRs without any file rows (dropped),16,,
+CI PRs merged,1615,1615.0,True
+CI PRs total,2383,2383.0,True
+NonCI PRs merged,22399,22399.0,True
+NonCI PRs total,31197,31197.0,True
+CI merge rate %,67.77,67.77,True
+NonCI merge rate %,71.8,71.8,True
+chi2 overall,17.42,12.95,False
+odds ratio (as in rq_2.py),1.21,1.21,True
+Claude_Code: CI merge %,61.02,61.02,True
+Claude_Code: NonCI merge %,58.9,58.9,True
+Claude_Code: chi2 (p=0.8671),0.03,0.03,True
+Copilot: CI merge %,58.67,58.67,True
+Copilot: NonCI merge %,40.92,40.92,True
+Copilot: chi2 (p=0.0000),67.03,67.03,True
+Cursor: CI merge %,60.0,60.0,True
+Cursor: NonCI merge %,65.74,65.74,True
+Cursor: chi2 (p=0.2225),1.49,1.49,True
+Devin: CI merge %,63.37,63.37,True
+Devin: NonCI merge %,52.52,52.52,True
+Devin: chi2 (p=0.0000),23.58,23.58,True
+OpenAI_Codex: CI merge %,77.01,77.01,True
+OpenAI_Codex: NonCI merge %,82.89,82.89,True
+OpenAI_Codex: chi2 (p=0.0000),22.91,2.91,False
+workflow runs in CSV,99979,,
+completed runs,99930,99930.0,True
+success % (modified GHA),75.59,75.59,True
+success % (did not modify),74.87,74.87,True
+chi2 overall,2.2,2.2,True
+p overall,0.138,0.138,True
+Claude_Code: no-CI success %,72.36,72.36,True
+Claude_Code: with-CI success %,78.44,78.44,True
+Claude_Code: chi2 (p=0.0511),3.81,3.81,True
+Copilot: no-CI success %,68.77,68.77,True
+Copilot: with-CI success %,74.75,74.75,True
+Copilot: chi2 (p=0.0000),40.62,40.62,True
+Cursor: no-CI success %,79.1,79.1,True
+Cursor: with-CI success %,83.13,83.13,True
+Cursor: chi2 (p=0.0285),4.8,4.8,True
+Devin: no-CI success %,81.26,81.26,True
+Devin: with-CI success %,83.16,83.16,True
+Devin: chi2 (p=0.0152),5.89,5.89,True
+OpenAI_Codex: no-CI success %,64.12,64.12,True
+OpenAI_Codex: with-CI success %,64.0,64.0,True
+OpenAI_Codex: chi2 (p=0.9296),0.01,0.01,True
+[robustness] PR-level mean success % (modified),71.92,,
+[robustness] PR-level mean success % (not modified),75.74,,
+[robustness] PRs with runs (modified / not),1856/29192,,

@@ -1,0 +1,11 @@
+ci_service,n,pct
+GitHub Actions,7565,96.78
+Azure Pipelines,105,1.34
+CircleCI,78,1.0
+Buildkite,33,0.42
+Travis CI,22,0.28
+GitLab CI,6,0.08
+AppVeyor,4,0.05
+Jenkins,2,0.03
+Bitrise,1,0.01
+Cirrus CI,1,0.01
