@@ -1,3 +1,7 @@
 agent,prs,prs_history_ok,file_versions,versions_ok_or_absent
-Devin,6,6,22,22
-Total,6,6,22,22
+Claude_Code,59,57,502,499
+Copilot,568,534,4839,4781
+Cursor,129,119,933,899
+Devin,570,519,4526,4450
+OpenAI_Codex,992,986,4128,4115
+Total,2318,2215,14928,14744

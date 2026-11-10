@@ -7,21 +7,29 @@ Finding tiers (zizmor personas; actionlint/yaml findings count as 'all' only):
   all      every finding (auditor persona)  -- what a maximal scan reports
   default  zizmor 'Regular' persona         -- what zizmor shows by default
   high     default AND severity High        -- the strictest tier
+  *_no_pin same, excluding 'unpinned-uses'  -- sensitivity: tag-pinned actions are common practice
+
+Associations are reported raw (chi-square) and adjusted (logistic, repo-clustered SEs, controls:
+agent, log #commits, #workflow files, whether a workflow file was added).
 
 Usage:  uv run python -m cicd_rai.summarize
 """
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+import statsmodels.formula.api as smf
 from scipy.stats import chi2_contingency
 
 ROOT = Path(__file__).resolve().parents[2]
+RAW = ROOT / "data" / "raw" / "aidev"
 INTERIM = ROOT / "data" / "interim"
 OUT = ROOT / "results" / "extension"
-TIERS = ("all", "default", "high")
+TIERS = ("all", "default", "high", "default_no_pin", "high_no_pin")
 
 
 def tier_flags(findings: pd.DataFrame) -> pd.DataFrame:
@@ -29,6 +37,8 @@ def tier_flags(findings: pd.DataFrame) -> pd.DataFrame:
     meta["default"] = (meta.tool == "zizmor") & (meta.persona == "Regular")
     meta["high"] = meta["default"] & (meta.severity == "High")
     meta["all"] = True
+    meta["default_no_pin"] = meta["default"] & (meta.rule != "unpinned-uses")
+    meta["high_no_pin"] = meta["high"] & (meta.rule != "unpinned-uses")
     return meta.set_index("key")
 
 
@@ -45,8 +55,9 @@ def pr_level(deltas: pd.DataFrame, meta: pd.DataFrame, comparison: str) -> pd.Da
         tiers = pd.DataFrame([count_tiers(k, meta) for k in d[f"{name}_keys"]], index=d.index)
         for t in TIERS:
             d[f"{name}_{t}"] = tiers[t]
+    d["added_file"] = (d.file_change == "added").astype(int)
     agg = {f"{n}_{t}": "sum" for n in ("introduced", "fixed") for t in TIERS}
-    agg.update({"n_after": "sum", "n_introduced": "sum", "path": "nunique"})
+    agg.update({"n_after": "sum", "n_introduced": "sum", "path": "nunique", "added_file": "max"})
     out = d.groupby(["pr_id", "agent"]).agg(agg).rename(columns={"path": "n_workflow_files"}).reset_index()
     return out
 
@@ -149,7 +160,31 @@ def main() -> None:
         rows.append(assoc(df, f"intro_{t}", "any_independent_human_oversight"))
     assoc_df = pd.DataFrame(rows)
     assoc_df.to_csv(OUT / "associations.csv", index=False)
-    print("\n== associations (chi-square, PR level)\n", assoc_df.to_string(index=False))
+    print("\n== associations (raw chi-square, PR level)\n", assoc_df.to_string(index=False))
+
+    # ---- 7. adjusted associations ----------------------------------------------------------------
+    repo = pd.read_parquet(RAW / "pull_request.parquet", columns=["id", "repo_id"]).rename(columns={"id": "pr_id"})
+    x = df.merge(repo, on="pr_id")
+    x["log_commits"] = np.log1p(x.n_commits_api)
+    x["merged_i"] = x.merged.astype(int)
+    x["ci_fail_i"] = x.ci_failed.astype(int)
+    x["human_i"] = x.any_independent_human_oversight.astype(int)
+    adj = []
+    for t in ("default", "high", "default_no_pin", "high_no_pin"):
+        x["risk"] = x[f"intro_{t}"].astype(int)
+        for y, sub in [("merged_i", x[x.outcome != "open"]), ("ci_fail_i", x[x.final_ci.isin(["failure", "success"])]),
+                       ("human_i", x)]:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                m = smf.logit(f"{y} ~ risk + C(agent) + log_commits + n_workflow_files + added_file", data=sub).fit(
+                    disp=0, cov_type="cluster", cov_kwds={"groups": sub.repo_id})
+            lo, hi = np.exp(m.conf_int().loc["risk"])
+            adj.append({"tier": t, "outcome": y.removesuffix("_i"), "odds_ratio": round(float(np.exp(m.params["risk"])), 3),
+                        "ci_low": round(float(lo), 3), "ci_high": round(float(hi), 3), "p": float(m.pvalues["risk"]),
+                        "n": len(sub)})
+    adj_df = pd.DataFrame(adj)
+    adj_df.to_csv(OUT / "associations_adjusted.csv", index=False)
+    print("\n== adjusted associations (logit, repo-clustered SE; agent + size controls)\n", adj_df.to_string(index=False))
     print(f"\nfinal CI evidence: {df.final_ci.value_counts(dropna=False).to_dict()}")
     print(f"wrote {OUT.relative_to(ROOT)}/*.csv")
 

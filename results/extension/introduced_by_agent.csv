@@ -1,3 +1,7 @@
-agent,all,default,high,n_prs
-Devin,83.33,50.0,50.0,6
-Total,83.33,50.0,50.0,6
+agent,all,default,high,default_no_pin,high_no_pin,n_prs
+Claude_Code,61.4,50.88,45.61,47.37,15.79,57
+Copilot,62.55,58.99,52.06,48.5,14.79,534
+Cursor,60.17,53.39,46.61,46.61,10.17,118
+Devin,66.09,57.03,46.63,47.21,17.15,519
+OpenAI_Codex,48.28,42.7,38.95,32.76,9.43,986
+Total,56.87,50.77,44.49,41.06,12.74,2214
