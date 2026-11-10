@@ -27,4 +27,10 @@ Our run: `uv run python -m cicd_rai.replicate` → `results/replication/comparis
   → The paper's "comparable / slightly higher success" claim depends on run-level pooling. To test properly: cluster-robust (GEE / mixed-effects logistic) model with PR and repo random effects.
 * **M4 – Yates' correction** is applied silently on 2×2 tables (scipy default); no multiple-comparison correction across 5 agents.
 * **M5 – Snapshot truncation:** AIDev v3/v4 sub-resource tables are truncated at 30 items per PR (fixed in v5), which can hide later commits/reviews in long PRs.
+* **M7 – CI evidence has expired on GitHub (verified 2026-11-10).** Run ids from the CSV dated Dec 2024 and
+  Jul 2025 return HTTP 404 and their commits have no check-runs; runs from Dec 2025 still exist (consistent
+  with a ~400-day retention). The whole cohort (PRs Dec 2024 – Jul 2025) is past that window, so the base
+  package's CSV — final heads only, exactly one commit per PR — is the **only surviving CI record**.
+  Per-commit / first-attempt CI outcomes cannot be recollected. (Responsible-AI point: the audit trail for
+  agent-made CI/CD changes is ephemeral unless archived.)
 * **M6 – Run collection script not released.** The workflow-runs CSV has 99,979 rows (paper: 99,976 collected); 99,930 are `completed`.

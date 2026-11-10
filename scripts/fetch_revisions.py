@@ -46,6 +46,22 @@ PR_META = INTERIM / "cohort_pr_commits.parquet"
 
 GHA_REGEX = r"\.github/workflows/.*\.ya?ml$"  # same as Ghaleb's rq_3.py
 
+CI_CACHE = INTERIM / "gh_cache" / "runs"
+CI_OUT = INTERIM / "ci_runs_api.parquet"
+
+
+def _load_dotenv() -> None:
+    """Read KEY=VALUE lines from the project's git-ignored .env (token never leaves this machine)."""
+    env = ROOT / ".env"
+    if env.exists():
+        for line in env.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip().removeprefix("export "), v.strip().strip("'\""))
+
+
+_load_dotenv()
 TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
 _local = threading.local()
 
@@ -144,6 +160,31 @@ def fetch_file(repo: str, sha: str, path: str) -> tuple[str, str | None]:
     return "ok", hashlib.sha256(r.content).hexdigest()
 
 
+RUN_FIELDS = ("id", "name", "path", "event", "status", "conclusion", "created_at", "run_attempt")
+
+
+def runs_for_sha(repo: str, sha: str) -> dict:
+    """GitHub Actions runs whose head_sha is this commit (PR runs live in the base repo)."""
+    cache = CI_CACHE / f"{repo.replace('/', '__')}__{sha}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    runs, status = [], "ok"
+    for page in range(1, 6):
+        r = get(f"https://api.github.com/repos/{repo}/actions/runs",
+                params={"head_sha": sha, "per_page": 100, "page": page})
+        if r.status_code != 200:
+            status = f"http_{r.status_code}"
+            break
+        batch = r.json().get("workflow_runs", [])
+        runs += [{k: w.get(k) for k in RUN_FIELDS} for w in batch]
+        if len(batch) < 100:
+            break
+    result = {"repo": repo, "sha": sha, "api_status": status, "runs": runs}
+    if status == "ok" or status in ("http_404", "http_410", "http_451"):
+        cache.write_text(json.dumps(result))
+    return result
+
+
 def plan_pr(pr: pd.DataFrame, meta: dict) -> list[dict]:
     first = pr.iloc[0]
     rows = []
@@ -180,6 +221,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None, help="only the first N PRs (smoke test)")
     ap.add_argument("--workers", type=int, default=8 if TOKEN else 2)
+    # Off by default: verified 2026-11-10 that GitHub has deleted Actions runs for this cohort
+    # (Dec 2024 and Jul 2025 run ids -> 404, check-runs empty; Dec 2025 runs still exist), so
+    # Ghaleb's CSV (final heads) is the only surviving CI evidence. See docs/discrepancy_log.md.
+    ap.add_argument("--ci", choices=["none", "first_final", "all"], default="none",
+                    help="which PR commits to fetch GitHub Actions runs for (only useful for recent PRs)")
     args = ap.parse_args()
     CACHE.mkdir(parents=True, exist_ok=True)
     REV_DIR.mkdir(parents=True, exist_ok=True)
@@ -208,10 +254,32 @@ def main() -> None:
                 for r in todo.itertuples()}
         for f in tqdm(as_completed(futs), total=len(futs), desc="files"):
             results[futs[f]] = f.result()
-    plan["fetch_status"] = [results.get((r.repo, r.sha, r.path), (r.fetch_status if "fetch_status" in plan
-                            and isinstance(r.fetch_status, str) else "pr_unavailable", None))[0]
-                            for r in plan.itertuples()]
+    def status_of(r) -> str:
+        if (r.repo, r.sha, r.path) in results:
+            return results[(r.repo, r.sha, r.path)][0]
+        return "pr_unavailable" if r.pr_status != "ok" else "no_sha"  # e.g. root commit has no parent
+
+    plan["fetch_status"] = [status_of(r) for r in plan.itertuples()]
     plan["content_sha256"] = [results.get((r.repo, r.sha, r.path), (None, None))[1] for r in plan.itertuples()]
+
+    # CI runs for the agent's first attempt and the final head of every workflow-touching PR
+    # (Ghaleb's CSV only covers the final head, so this is needed for first-attempt outcomes;
+    #  fetching the final head too lets us check agreement with his CSV).
+    if args.ci != "none":
+        want = plan.role.str.startswith("touch_1") | plan.role.str.endswith("final")
+        if args.ci == "all":
+            want = plan.role.str.startswith("touch_") | plan.role.str.endswith("final")
+        shas = plan[want & plan.sha.notna()][["repo", "sha"]].drop_duplicates()
+        CI_CACHE.mkdir(parents=True, exist_ok=True)
+        ci = []
+        with ThreadPoolExecutor(args.workers) as ex:
+            futs = [ex.submit(runs_for_sha, r.repo, r.sha) for r in shas.itertuples()]
+            for f in tqdm(as_completed(futs), total=len(futs), desc="CI runs"):
+                res = f.result()
+                base = {"repo": res["repo"], "sha": res["sha"], "api_status": res["api_status"]}
+                ci += [{**base, **{f"run_{k}": v for k, v in run.items()}} for run in res["runs"]] or [base]
+        pd.DataFrame(ci).to_parquet(CI_OUT, index=False)
+        print(f"wrote {CI_OUT.relative_to(ROOT)} ({len(shas)} commits)")
 
     commits_df = pd.DataFrame([{"pr_id": k, "pr_status": v["status"], "order": i, **c}
                                for k, v in metas.items() for i, c in enumerate(v["commits"])])
