@@ -1,0 +1,10 @@
+flag,outcome,pct_if_flag,pct_if_not,diff_pp,chi2,p,n_flag,n
+intro_all,merged,80.0,0.0,80.0,0.15,0.6985353583033386,5,6
+intro_all,ci_failed,80.0,100.0,-20.0,0.0,1.0,5,6
+intro_all,any_independent_human_oversight,60.0,0.0,60.0,0.0,1.0,5,6
+intro_default,merged,100.0,33.33,66.67,0.75,0.3864762307712325,3,6
+intro_default,ci_failed,66.67,100.0,-33.33,0.0,1.0,3,6
+intro_default,any_independent_human_oversight,66.67,33.33,33.33,0.0,1.0,3,6
+intro_high,merged,100.0,33.33,66.67,0.75,0.3864762307712325,3,6
+intro_high,ci_failed,66.67,100.0,-33.33,0.0,1.0,3,6
+intro_high,any_independent_human_oversight,66.67,33.33,33.33,0.0,1.0,3,6

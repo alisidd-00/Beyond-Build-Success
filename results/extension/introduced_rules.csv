@@ -1,0 +1,11 @@
+tool,rule,persona,severity,findings,prs
+zizmor,secrets-outside-env,Auditor,Medium,27,3
+zizmor,artipacked,Regular,Medium,2,2
+zizmor,excessive-permissions,Regular,Medium,3,2
+zizmor,template-injection,Regular,High,2,2
+zizmor,unpinned-uses,Regular,High,5,2
+actionlint,action,,Error,2,1
+zizmor,anonymous-definition,Pedantic,Informational,2,1
+zizmor,concurrency-limits,Pedantic,Low,1,1
+zizmor,excessive-permissions,Pedantic,Medium,1,1
+zizmor,template-injection,Pedantic,Low,1,1

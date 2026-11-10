@@ -138,7 +138,10 @@ def read_blobs(d: Path, oids: list[str]) -> dict[str, bytes]:
 def process_repo(repo: str, cohort: pd.DataFrame, aidev_commits: dict[int, list[str]]) -> dict:
     cache = CACHE / (repo.replace("/", "__") + ".json")
     if cache.exists():
-        return json.loads(cache.read_text())
+        cached = json.loads(cache.read_text())
+        # reuse only if the cache covers every cohort PR of this repo (a --limit-prs run may not)
+        if set(cohort.pr_id.astype(int)) <= set(cached.get("pr_ids", [])):
+            return cached
     d = ensure_repo(repo)
     prs = cohort[["pr_id", "number"]].drop_duplicates()
     sizes = [len(aidev_commits.get(p, [])) for p in prs.pr_id]
@@ -171,7 +174,8 @@ def process_repo(repo: str, cohort: pd.DataFrame, aidev_commits: dict[int, list[
                                    ("pr_unavailable" if ps != "ok" else "no_sha")
                                    for s, p, ps in zip(plan_df.sha, plan_df.path, plan_df.pr_status)]
         plan_df["content_sha256"] = [digest.get((s, p)) for s, p in zip(plan_df.sha, plan_df.path)]
-    result = {"repo": repo, "plan": plan_df.to_dict("records"), "commits": commits}
+    result = {"repo": repo, "pr_ids": sorted(int(p) for p in prs.pr_id),
+              "plan": plan_df.to_dict("records"), "commits": commits}
     CACHE.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(result, default=str))
     return result
