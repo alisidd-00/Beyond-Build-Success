@@ -1,10 +1,10 @@
 # Beyond Build Success: Security and Human Oversight When AI Agents Change CI/CD Configurations
 
-Khadija Hakim · M. Ali Siddique · Fatima Ghazanfer · Abdullah Qureshi — AI630 Responsible AI, short paper (progress report), 12 November 2026
+Khadija Hakim · M. Ali Siddique · Fatima Ghazanfer · Abdullah Qureshi | AI630 Responsible AI, short paper, 14 November 2026
 
 ## Abstract
 
-AI coding agents now open pull requests (PRs) that change continuous integration and delivery (CI/CD) configuration. A recent study reports that such PRs pass their builds about as often as other agent PRs [2]. A passing build, however, does not show that a workflow change is safe, or that anyone checked it. We replicate that study on the same pinned AIDev-pop snapshot and extend it to security and human oversight.
+AI coding agents now open PRs that change CI/CD configuration. A recent study reports that such PRs pass their builds about as often as other agent PRs [2]. A passing build, however, does not show that a workflow change is safe, or that anyone checked it. We replicate that study on the same pinned AIDev-pop snapshot and extend it to security and human oversight.
 
 The replication reproduces 65 of 72 published values exactly. It also finds that the published build-success comparison mixes in 5,233 human-written PRs. With agent PRs only, the effect becomes agent-specific: OpenAI Codex PRs that change CI fail 13.5 percentage points more often on their first run.
 
@@ -12,13 +12,13 @@ For the extension, we recovered every revision of every GitHub Actions workflow 
 
 ## 1 Introduction
 
-Autonomous coding agents such as OpenAI Codex, Devin, GitHub Copilot, Cursor and Claude Code now open pull requests on real GitHub projects. The AIDev dataset alone records over 456,000 such PRs across 61,000 repositories [1]. Most of these PRs change application code, but some change the CI/CD configuration that builds, tests and releases the project.
+Coding agents like OpenAI Codex, Devin, GitHub Copilot, Cursor and Claude Code can now open PRs into real projects on GitHub. The AIDev dataset alone contains more than 456,000 PRs across 61,000 repositories [1]. Most of these PRs contain changes to application code but some contain changes to the CI/CD configuration of the project (the files that build, test and release the project).
 
-CI/CD configuration is a sensitive target. A GitHub Actions workflow runs with repository tokens and secrets, and it can be triggered by outside contributors. A small change to it can expose credentials or let untrusted input run as code [3]. An agent that edits a workflow therefore changes part of the project's security boundary, not just its build.
+CI/CD configuration files are a sensitive target. GitHub Actions workflows have access to the tokens and secrets of the repository they run in, and they can be triggered by outside contributors. Making a small change to a workflow can result in credentials being exposed, or untrusted input running as code [3]. Editing a workflow file changes the security boundary of the project, not just how it is built.
 
-Ghaleb [2] gave the first account of how often agents touch CI/CD files and with what outcome. That study found that CI/CD files are a small share of agent changes, that such PRs merge slightly less often, and that their workflow runs succeed about as often as runs of other agent PRs (75.59% vs 74.87%). Build success, however, is a correctness signal. It does not tell a maintainer whether the change weakened the workflow's security, or whether a person reviewed it before merge.
+Ghaleb [2] was the first to report how often coding agents interact with CI/CD files, and what happens to them. They found that agents interact with CI/CD files rarely, that the resulting PRs merge slightly less often, but that their workflows succeed to about the same extent as other agent workflows (75.59% vs 74.87%). Build success is a signal of correctness, but does not indicate whether the change weakened the security of the workflow, or whether a human reviewed the PR before it was merged.
 
-This gap matters from a Responsible AI view. We frame it with four principles: **safety** (does the change introduce risk?), **transparency** (can a reviewer see what the agent changed?), **accountability** (is there a durable record of what happened?) and **human oversight** (did an independent person review it?). Effective human oversight is now a legal requirement for high-risk AI systems in the EU [4]. We use it here as a design principle, not as a legal claim about coding agents.
+Filling this gap in knowledge is important from a Responsible AI perspective. Here we consider four principles: safety (does the change introduce risk?), transparency (can a reviewer see what the agent changed?), accountability (is there a durable record of what happened?) and human oversight (did an independent person review it?). Effective human oversight is now a legal requirement for high-risk AI systems in the EU [4]. Here we use it as a design principle, rather than a legal claim about coding agents.
 
 Our project first replicates Ghaleb's study, then extends it with three research questions:
 
@@ -29,17 +29,17 @@ Our project first replicates Ghaleb's study, then extends it with three research
 | RQ5 | Are introduced risks associated with CI outcome, merge decision and human review? Do they change between the agent's first attempt and its final revision? | Done (preliminary) |
 | RQ6 | Does a revision-aware, explainable review policy surface confirmed risks with fewer irrelevant alerts than scanning the whole file? | Not started |
 
-So far the project contributes: (1) an independent replication on pinned data that reproduces 65 of 72 published values and corrects the build-success conclusion; (2) a revision-aligned dataset of workflow file versions for 2,215 agent PRs, with every scanner finding marked as introduced or pre-existing; (3) preliminary evidence that introduced risks are common, are not caught by CI and are not targeted by review; and (4) evidence that GitHub's CI records for these PRs have already expired, which limits any later audit.
+The project so far includes: (1) an independent replication on pinned data that matches 65 of the 72 published values and corrects the build-success conclusion; (2) a revision-aligned dataset of workflow file versions for 2,215 agent PRs, with each scanner finding labeled as either introduced or pre-existing; (3) some evidence that introduced risks are common, not caught by CI, and not targeted by review; and (4) evidence that the GitHub records of CI for these PRs have already expired, limiting the value of any future audit.
 
 ## 2 Related Work
 
-**Agentic pull requests.** Li et al. [1] released AIDev and showed that agent PRs are produced quickly but are accepted less often than human PRs. Peralta et al. [9] inspected 717 closed agent PRs by hand. Only 35.7% of rejections reflected clear agent failures, and 15.4% of merged PRs needed explicit reviewer involvement. A merge label therefore hides much of the human work around an agent PR. We take this as a reason to measure review evidence directly rather than infer it from the merge outcome.
+**Agentic PRs.** Li et al. [1] introduced AIDev and found that agent PRs are created quickly but merged less frequently than human PRs. Peralta et al. [9] examined 717 closed agent PRs by hand. They found that only 35.7% of rejections were due to clear agent failures and 15.4% of merged agent PRs required human reviewer interaction. The merge label conveys very little information about the human interactions surrounding an agent PR. This motivates us to measure review evidence directly instead of deriving it from the merge label.
 
-**CI/CD changes by agents.** Ghaleb [2] is our base paper and the only prior study of agent edits to CI/CD configuration. It measures frequency, merge rate and workflow-run success, but not security or review. Ghammam and Almukhtar [6] study build code written by agents and find 364 maintainability and security build smells. They report that more than 61% of agent PRs are merged with minimal human intervention. Their unit is build scripts in general; ours is GitHub Actions workflows tracked revision by revision.
+**Agents making CI/CD changes.** Ghaleb [2] is the only paper before ours that studied agent edits to CI/CD configuration, measuring frequency, merge rate, and workflow run success, but not security or review. Ghammam and Almukhtar [6] study build code created by agents, measuring 364 maintainability and security build smells. They find that over 61% of agent PRs are merged with little human interaction. Their unit is build scripts in general, whereas we track GitHub Actions workflows revision by revision.
 
-**Security of AI-generated code.** Pearce et al. [5] found that about 40% of programs Copilot completed in security-relevant scenarios were vulnerable. Siddiq et al. [7] identified 1,293 security-related agent PRs in AIDev and found that their rejection depends more on size and verbosity than on security content. Sakib et al. [8] scanned 4,022 AIDev PRs for security smells and found at least one in 38.9% of them, with supply-chain issues making up most findings. This is the closest work to ours, so we do not claim that scanning AIDev for security issues is new.
+**Security of AI-generated code.** Pearce et al. [5] found that approximately 40% of programs Copilot completed in security contexts were vulnerable. Siddiq et al. [7] identified 1,293 security-relevant agent PRs in AIDev and found that rejection of these PRs depends more on PR size and verbosity than on its security content. Sakib et al. [8] scanned 4,022 AIDev PRs for security smells and found at least one security smell in 38.9% of PRs, with supply chain issues being the majority of findings. This is most similar to our work, and we do not mean to suggest that scanning AIDev for security issues is novel.
 
-**GitHub Actions security and alert fatigue.** Koishybayev et al. [3] characterised security weaknesses in GitHub CI workflows at scale, such as broad token permissions and unpinned third-party actions. zizmor [11] and actionlint [12] encode many of these checks as static analysers. Experience at Google shows that developers act on static analysis when results are shown at code review and concern the code being changed [10]. That observation motivates our focus on findings the agent introduced.
+**GitHub Actions security and alert fatigue.** Koishybayev et al. [3] categorised security issues in GitHub CI workflows at scale, including excessive token permissions and unpinned third-party actions. zizmor [11] and actionlint [12] encode many of these issues as static analysers. It has been observed at Google that static analysis findings are acted upon by developers when viewed at code review and impacting the files being modified [10]. This motivates our emphasis on findings added by the agent.
 
 **How our work differs.** The table summarises the gap. No prior study links introduced workflow risks to the CI result and the human review recorded at the same revision, and none evaluates a review policy built on that link.
 
@@ -135,18 +135,18 @@ The pipeline is written in Python with DuckDB and pandas. Dependencies, includin
 
 ### 5.2 Technical decisions
 
-- **Pin everything.** The dataset snapshot, the base package commit and the scanner versions are fixed, so another group can reproduce every table.
-- **Use `git`, not the GitHub API, for history.** The API's rate limits made a full-cohort fetch slow. Fetching PR head refs with `git` needs no token and matched the API exactly on a test set.
-- **Match findings by YAML structure, not line number.** Line-based matching would label most findings in an edited file as new.
+- **Pin everything.** The dataset snapshot, the base package commit and the scanner versions are all pinned, so another group can re-create all the tables.
+- **Use git, not the GitHub API, for history.** The GitHub API has rate limits which made fetching the full cohort slow. Using git to fetch PR head refs did not require a token and was identical to the API output on a test set.
+- **Match findings by YAML structure, not line number.** Matching by line number would mark most findings in an edited file as new.
 - **Record everything, filter later.** Running zizmor in its most inclusive mode lets us derive the default, High and no-pinning tiers from one scan.
-- **Separate self-review from independent review.** For three of the five agents the PR author is the person who launched the agent, so counting their activity as review would overstate oversight.
+- **Separate self-review from independent review.** For three of the five agents, the PR author is the person who launched the agent. Counting their actions as "review" would overstate oversight.
 
 ### 5.3 Challenges
 
-- **CI evidence has expired.** We planned to collect the CI result of every agent commit. Runs from December 2024 and July 2025 now return "not found" on GitHub, while runs from December 2025 still exist, which suggests a retention window of about 400 days. Every cohort PR falls outside it. The base package's CSV is now the only surviving record, and it covers only final commits. Of the 2,214 analysed PRs, we therefore know the final CI result for 1,574. For the other 640 it is unknown: 434 have no recorded run for their final commit, and 206 have runs that ended without a clear pass or fail, for example because they were cancelled or skipped. This is also a finding: the audit trail for agent-made CI/CD changes disappears unless someone archives it.
-- **Unavailable history.** 82 PRs could not be fetched because the repository was deleted, made private or lost the PR ref, and 21 had rewritten history. We keep them in the cohort as unavailable. One further PR was recovered, but its starting commit could not be resolved, so its overall change cannot be measured. This leaves 2,214 analysed PRs.
-- **Snapshot truncation.** Review tables are capped at 30 items per PR in this snapshot (Section 3).
-- **Discrepancies in the base paper.** Several published values could not be reproduced (Section 6.1). We confirmed each against the author's own result files before treating it as an error in the paper rather than in our code.
+- **CI evidence has expired.** We intended to capture the CI result of every agent commit. Runs from December 2024 and July 2025 now return "not found" on GitHub, while runs from December 2025 are still present, so we infer an approximate retention window of 400 days. Every cohort PR is outside that window. The base package CSV is the only thing that survived, and that only captures final commits. Of the 2,214 analysed PRs, we therefore know the final CI result for 1,574. For the other 640 it is unknown: 434 have no recorded run for their final commit, and 206 have runs that ended without a clear pass or fail, for example because they were cancelled or skipped. This is also a finding: agent-made CI/CD changes lose their audit trail unless someone archives them.
+- **Unavailable history.** 82 PRs could not be fetched because the repository was deleted, made private or lost the PR ref, and 21 had rewritten history. We keep all of them in the cohort as unavailable. One further PR was recovered, but its starting commit could not be resolved, so its overall change cannot be measured. This leaves 2,214 analysed PRs.
+- **Snapshot truncation.** Review tables are truncated to 30 items per PR in this snapshot (Section 3).
+- **Discrepancies in the base paper.** A few published values could not be reproduced (Section 6.1). We tested each against the author's own result files before treating it as an error in the paper rather than an error in our code.
 
 ## 6 Preliminary Results
 
@@ -221,13 +221,15 @@ The main remaining work is RQ6: building labeled ground truth and testing whethe
 
 *Figure 4. Project plan, 15–30 November 2026.*
 
-1. **Labeling (15–18 Nov).** Draw a stratified sample of about 200 PRs by agent and finding tier, including PRs with no findings. Write a codebook that classes each introduced finding as a real risk, a policy-only issue or a false positive. Two members label each PR independently; we report Cohen's κ and resolve disagreements together. This also gives the first estimate of scanner precision, which our current results lack.
-2. **Review policy (18–21 Nov).** Implement the policy that routes each PR to routine checks, human security review or insufficient evidence, with a stated reason. For early triage it will use only what is known when the PR is first submitted.
-3. **Evaluation (18–21 Nov).** Compare the whole-file scan, the introduced-only scan and the policy on precision, recall, F1 and recall at a 20% review budget, with repository and time holdouts where the sample allows.
-4. **If time allows.** Check whether PR descriptions disclose security-relevant workflow changes (transparency), and screen the fetched workflow files for hard-coded secrets so that a redacted dataset can be released.
-5. **Final presentation (22 Nov) and final paper (30 Nov).** We still have to choose a CORE A or A* venue and its template.
+1. **Labelling (15-18 Nov).** We draw a stratified sample of about 200 PRs by agent and finding tier, including PRs with no findings, write a codebook to label introduced findings as either a real risk, a policy only issue or a false positive, and have two individuals label PRs independently (we report Cohen's kappa) with disagreements resolved. This also gives the first estimate of scanner precision, which our current results lack.
+2. **Review policy (18-21 Nov).** We implement the policy to route each PR to either routine checks, human security review or insufficient evidence with a reason. This will use information at the time of initial PR creation for early triage.
+3. **Evaluation (18-21 Nov).** We evaluate the full-file scan, introduced-only scan, and the policy on precision, recall, F1 score, and recall at 20% review budget with repository and time holdouts where possible in the sample.
+4. **If time allows.** Investigate whether PR descriptions indicate security-relevant workflow changes (transparency), screen workflow files fetched for hard-coded secrets (redacted data can be released).
+5. **Final presentation (22 Nov) and final paper (30 Nov).** We need to decide on our venue (CORE A or A*) and corresponding paper template.
 
-**Limitations to address in the final paper.** Our findings come from static analysis and are not confirmed vulnerabilities until labeled. The associations are observational, and unmeasured factors such as project maturity may explain part of them. CI results exist only for final commits and are unknown for 640 PRs. The scope is GitHub Actions in public repositories.
+## 8 Limitations
+
+Our results are the output of static analysis and need to be confirmed before they can be considered as vulnerabilities. Associations are observational and other unmeasured confounders, for example the maturity of the project, might contribute to the observed relationships. The results for the CI step only reflect the final commit of a PR; information is not available for 640 PRs. We only analyzed GitHub Actions in public repositories.
 
 ## References
 
