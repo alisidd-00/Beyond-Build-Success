@@ -69,7 +69,7 @@ We also use the base paper's replication package [13] (commit `4ae0b54`). Its CS
 | Claude Code | 59 | 57 | 502 |
 | **Total** | **2,318** | **2,215 (95.6%)** | **14,928** |
 
-**Derived data.** For each recovered PR we stored each workflow file at every relevant commit (Section 4). This gave 13,549 file versions across 1,438 distinct workflow paths. A further 1,195 versions are recorded as absent, because the file did not exist at that commit (for example, a workflow the agent created). We also derived, for each version, the CI result of that commit and the review events that came before it.
+**Derived data.** For each recovered PR we stored each workflow file at every relevant commit (Section 4). This gave 13,549 file versions across 1,438 distinct workflow paths. A further 1,195 versions are recorded as absent, because the file did not exist at that commit (for example, a workflow the agent created). The remaining 184 could not be retrieved: 183 belong to the 103 PRs whose history was unavailable, and one is the base version of a PR whose starting commit has no recorded SHA. We also derived, for each version, the CI result of that commit and the review events that came before it.
 
 **Known limits of the data.** The snapshot's commit, review and comment tables are truncated at 30 items per PR, which affects 67 cohort PRs. Our git-based fetch recovers their full commit lists, but some reviews may be missing. CI results exist only for final commits (Section 5.3). We never store usernames; reviewers are kept only as a role. The fetched workflow files have not yet been screened for hard-coded secrets, so we release only aggregate tables for now.
 
@@ -143,8 +143,8 @@ The pipeline is written in Python with DuckDB and pandas. Dependencies, includin
 
 ### 5.3 Challenges
 
-- **CI evidence has expired.** We planned to collect the CI result of every agent commit. Runs from December 2024 and July 2025 now return "not found" on GitHub, while runs from December 2025 still exist, which suggests a retention window of about 400 days. Every cohort PR falls outside it. The base package's CSV is now the only surviving record, and it covers only final commits. We therefore know the CI result for 1,574 PRs and treat it as unknown for the other 640. This is also a finding: the audit trail for agent-made CI/CD changes disappears unless someone archives it.
-- **Unavailable history.** 82 PRs could not be fetched because the repository was deleted, made private or lost the PR ref, and 21 had rewritten history. We keep them in the cohort as unavailable.
+- **CI evidence has expired.** We planned to collect the CI result of every agent commit. Runs from December 2024 and July 2025 now return "not found" on GitHub, while runs from December 2025 still exist, which suggests a retention window of about 400 days. Every cohort PR falls outside it. The base package's CSV is now the only surviving record, and it covers only final commits. Of the 2,214 analysed PRs, we therefore know the final CI result for 1,574. For the other 640 it is unknown: 434 have no recorded run for their final commit, and 206 have runs that ended without a clear pass or fail, for example because they were cancelled or skipped. This is also a finding: the audit trail for agent-made CI/CD changes disappears unless someone archives it.
+- **Unavailable history.** 82 PRs could not be fetched because the repository was deleted, made private or lost the PR ref, and 21 had rewritten history. We keep them in the cohort as unavailable. One further PR was recovered, but its starting commit could not be resolved, so its overall change cannot be measured. This leaves 2,214 analysed PRs.
 - **Snapshot truncation.** Review tables are capped at 30 items per PR in this snapshot (Section 3).
 - **Discrepancies in the base paper.** Several published values could not be reproduced (Section 6.1). We confirmed each against the author's own result files before treating it as an error in the paper rather than in our code.
 
@@ -207,11 +207,11 @@ In raw comparisons, PRs that introduce a default-tier finding fail CI less often
 
 ![Figure 3: After controls, introduced risk predicts neither CI failure, merging nor review](figures/fig3_adjusted_odds_ratios.png)
 
-*Figure 3. Source: `results/extension/associations_adjusted.csv`; merge: 1,946 closed PRs; CI: 1,574 PRs with a known result; review: 2,214 PRs.* Every 95% interval crosses 1. The CI estimate for the default tier leans below 1 (OR 0.71), so if anything, risky PRs fail CI slightly less often.
+*Figure 3. Source: `results/extension/associations_adjusted.csv`; all groups drawn from the 2,214 analysed PRs: merge = 1,946 closed PRs with recovered history; CI = 1,574 PRs with a known final result; review = all 2,214.* Every 95% interval crosses 1. The CI estimate for the default tier leans below 1 (OR 0.71), so if anything, risky PRs fail CI slightly less often.
 
-Much of the merged work had no independent oversight at all. Of 1,574 merged PRs, 866 (55.0%) received no review or comment from anyone other than the PR author and bots.
+Much of the merged work had no independent oversight at all. Of the 1,524 merged PRs among the 2,214 analysed, 837 (54.9%) received no review or comment from anyone other than the PR author and bots.
 
-Review feedback is followed by more revision, but not by more targeted revision. Among the 513 PRs that received independent human feedback after the agent's first attempt, 19.1% removed a default-tier finding in a later commit, but 19.7% also added a new one. Among the 1,697 PRs without such feedback, the figures were 7.0% and 6.2%.
+Review feedback is followed by more revision, but not by more targeted revision. Among the 513 PRs that received independent human feedback after the agent's first attempt, 19.1% removed a default-tier finding in a later commit, but 19.7% also added a new one. Among the 1,697 PRs without such feedback, the figures were 7.0% and 6.2%. These two groups total 2,210 PRs: four analysed PRs have no agent commit that touches the workflow file, so they have no first attempt to compare.
 
 ## 7 Remaining Work
 
